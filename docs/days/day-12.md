@@ -1,8 +1,8 @@
 # Jobeet Day 12: The API
 
 When you post a job, you will want to have the greatest exposure possible.
-If your job is syndicated on a lot of small websites, you will have a better chance to find the right person. That's the power of the [long tail][1].
-Affiliates will be able to publish the latest posted jobs on their websites thanks to the web services we will develop along this day.
+If your job is syndicated on a lot of small sites, you will have a better chance to find the right person. That’s the power of the [long tail][1].
+Affiliates will be able to publish the latest posted jobs on their sites thanks to the API we will develop along this day.
 
 ## Affiliates
 As per [day 2](day-2.md) requirements:
@@ -64,10 +64,69 @@ class AffiliateFixtures extends Fixture implements OrderedFixtureInterface
 }
 ```
 
+In the fixtures file, tokens are hardcoded to simplify the testing, but when an actual user applies for an account, the token will need to be generated.
+Create a new listener in `src/EventListener` folder:
+
+```php
+namespace App\EventListener;
+
+use App\Entity\Affiliate;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+
+class AffiliateTokenListener
+{
+    /**
+     * @param LifecycleEventArgs $args
+     */
+    public function prePersist(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+
+        if (!$entity instanceof Affiliate) {
+            return;
+        }
+
+        if (!$entity->getToken()) {
+            $entity->setToken(\bin2hex(\random_bytes(10)));
+        }
+    }
+}
+```
+
+Register this listener in `config/services.yaml`:
+
+```yaml
+# ...
+
+services:
+    # ...
+    
+    App\EventListener\AffiliateTokenListener:
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+```
+
+Now you can reload fixtures:
+
+```bash
+bin/console doctrine:fixtures:load
+```
+
+## The Job API
+
+*Work in progress*
+
+## The Affiliate Application Form
 
 *Work in progress*
 
 ## Additional information
+
+*Work in progress*
+
+## The Affiliate CRUD for Admin
+
+*Work in progress*
 
 ## Next Steps
 
