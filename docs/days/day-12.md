@@ -115,6 +115,8 @@ bin/console doctrine:fixtures:load
 
 ## The Job API
 
+### Setup bundles
+
 To create the job API we gonna use bunch of two bundles: [JMSSerializerBundle][3] and [FOSRestBundle][2].
 **JMSSerializerBundle** is used to easily serialize and deserialize data, and **FOSRestBundle** provides various tools to rapidly develop RESTful API’s.
 
@@ -143,6 +145,83 @@ composer require friendsofsymfony/rest-bundle ^2.3
 There will be the same question and after that new config file will appear: `config/packages/fos_rest.yaml`.  
 We have bundles installed and initial configuration created!
 
+### Create Controller
+
+It is good practice to separate API routes and controllers as we did with admin routes:
+
+* all controllers will be placed in `src/Controller/API`
+* all routes will start with `/api/v1/`
+
+
+Create first API controller in folder `src/Controller/API`:
+
+```php
+namespace App\Controller\API;
+
+use FOS\RestBundle\Controller\FOSRestController;
+
+class JobController extends FOSRestController
+{
+
+}
+```
+
+Notice that this controller extends `FOSRestController` class from `FOSRestBundle` package.
+This parent controller provides some helper methods that we will use.
+
+And modify `config/routes/annotations.yaml`:
+
+```diff
+  controllers:
+      resource: ../../src/Controller/
+      type: annotation
+  
++ api_controllers:
++     resource: ../../src/Controller/API/
++     type: annotation
++     prefix: /api/v1/
+```
+
+This change prepend `/api/v1/` to all routes from `src/Controller/API/` folder and we don’t have to track it for each API route.
+
+Configuration is done and let’s create our first action:
+
+```php
+namespace App\Controller\API;
+
+use App\Entity\Affiliate;
+use FOS\RestBundle\Controller\FOSRestController;
+use FOS\RestBundle\Controller\Annotations as Rest;
+use Symfony\Component\HttpFoundation\Response;
+
+class JobController extends FOSRestController
+{
+    /**
+     * @Rest\Get("/{token}/jobs", name="api.job.list")
+     *
+     * @param Affiliate $affiliate
+     *
+     * @return Response
+     */
+    public function getJobsAction(Affiliate $affiliate) : Response
+    {
+        return $this->handleView($this->view([], Response::HTTP_OK));
+    }
+}
+```
+
+Try to open [http://127.0.0.1/api/v1/sensio_labs/jobs][4] link. You should see just `[]` on page.  
+What we did here:
+
+* fetched affiliate by token from route (in our case token is `sensio_labs`)
+* used `view` method to create `View` object with empty array response and code 200.
+* used `handleView` method to convert `View` object into response object. 
+
+What is not done yet:
+
+* check if affiliate is active
+* fetch, serialize and return jobs related to proper affiliate
+
 ## The Affiliate Application Form
 
 *Work in progress*
@@ -166,3 +245,4 @@ Main page is available here: [Symfony 4.1 Jobeet Tutorial](../index.md)
 [1]: https://en.wikipedia.org/wiki/Long_tail
 [2]: https://symfony.com/doc/1.5/bundles/FOSRestBundle/index.html
 [3]: https://github.com/schmittjoh/JMSSerializerBundle
+[4]: http://127.0.0.1/api/v1/sensio_labs/jobs
