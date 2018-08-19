@@ -5,6 +5,7 @@ If your job is syndicated on a lot of small sites, you will have a better chance
 Affiliates will be able to publish the latest posted jobs on their sites thanks to the API we will develop along this day.
 
 ## Affiliates
+
 As per [day 2](day-2.md) requirements:
 
 > "Story F7: An affiliate retrieves the current active job list"
@@ -114,7 +115,33 @@ bin/console doctrine:fixtures:load
 
 ## The Job API
 
-*Work in progress*
+To create the job API we gonna use bunch of two bundles: [JMSSerializerBundle][3] and [FOSRestBundle][2].
+**JMSSerializerBundle** is used to easily serialize and deserialize data, and **FOSRestBundle** provides various tools to rapidly develop RESTful API’s.
+
+First install [JMSSerializerBundle][3]:
+
+```bash
+composer require jms/serializer-bundle ^2.4
+```
+
+During the installation you will be asked if recipe from **contrib** repository should be applied:
+
+![Contributors Recipe Question](../files/images/screenshot_24.png)
+
+Our suggestion is to answer `y` *(Yes)*.  
+Thanks to Symfony Flex and this recipe bundle will be automatically connected in `config/bundles.php` and next configuration files will be created:
+
+* `config/packages/dev/jms_serializer.yaml`
+* `config/packages/jms_serializer.yaml`
+
+Next install [FOSRestBundle][2]:
+
+```bash
+composer require friendsofsymfony/rest-bundle ^2.3
+```
+
+There will be the same question and after that new config file will appear: `config/packages/fos_rest.yaml`.  
+We have bundles installed and initial configuration created!
 
 ## The Affiliate Application Form
 
@@ -137,3 +164,5 @@ Previous post is available here: [Jobeet Day 11: The User](day-11.md)
 Main page is available here: [Symfony 4.1 Jobeet Tutorial](../index.md)
 
 [1]: https://en.wikipedia.org/wiki/Long_tail
+[2]: https://symfony.com/doc/1.5/bundles/FOSRestBundle/index.html
+[3]: https://github.com/schmittjoh/JMSSerializerBundle
