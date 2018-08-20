@@ -184,7 +184,7 @@ And modify `config/routes/annotations.yaml`:
 
 This change prepend `/api/v1/` to all routes from `src/Controller/API/` folder and we don’t have to track it for each API route.
 
-Configuration is done and let’s create our first action:
+Routes configuration is done and let’s create our first action:
 
 ```php
 namespace App\Controller\API;
@@ -210,7 +210,23 @@ class JobController extends FOSRestController
 }
 ```
 
-Try to open [http://127.0.0.1/api/v1/sensio_labs/jobs][4] link. You should see just `[]` on page.  
+Do small adjustments in configuration file `config/packages/fos_rest.yaml` of the FOSRestBundle:
+
+```yaml
+fos_rest:
+    format_listener:
+        rules:
+            - { path: ^/api, prefer_extension: true, fallback_format: json, priorities: [ json ] }
+            - { path: ^/, prefer_extension: true, fallback_format: html,  priorities: [ html, '*/*'] }
+```
+
+Here we have two rules:
+* rule for routes starting with `/api` - response will be serialized into json
+* rule for all other routes - response will be formatted with twig, as it was before
+
+It was the only thing you need to configure in FOSRestBundle.
+
+Now try to open [http://127.0.0.1/api/v1/sensio_labs/jobs][4] link. You should see just `[]` on page.  
 What we did here:
 
 * fetched affiliate by token from route (in our case token is `sensio_labs`)
