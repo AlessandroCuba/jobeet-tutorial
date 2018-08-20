@@ -190,6 +190,8 @@ Routes configuration is done and let’s create our first action:
 namespace App\Controller\API;
 
 use App\Entity\Affiliate;
+use App\Entity\Job;
+use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\FOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Symfony\Component\HttpFoundation\Response;
@@ -200,12 +202,15 @@ class JobController extends FOSRestController
      * @Rest\Get("/{token}/jobs", name="api.job.list")
      *
      * @param Affiliate $affiliate
+     * @param EntityManagerInterface $em
      *
      * @return Response
      */
-    public function getJobsAction(Affiliate $affiliate) : Response
+    public function getJobsAction(Affiliate $affiliate, EntityManagerInterface $em) : Response
     {
-        return $this->handleView($this->view([], Response::HTTP_OK));
+        $jobs = $em->getRepository(Job::class)->findActiveJobs();
+
+        return $this->handleView($this->view($jobs, Response::HTTP_OK));
     }
 }
 ```
@@ -221,22 +226,189 @@ fos_rest:
 ```
 
 Here we have two rules:
+
 * rule for routes starting with `/api` - response will be serialized into json
 * rule for all other routes - response will be formatted with twig, as it was before
 
 It was the only thing you need to configure in FOSRestBundle.
 
-Now try to open [http://127.0.0.1/api/v1/sensio_labs/jobs][4] link. You should see just `[]` on page.  
+Now try to open [http://127.0.0.1/api/v1/sensio_labs/jobs][4] link. You should see something similar:
+
+![List of Jobs](../files/images/screenshot_25.png)
+
+> We use next extension for Chrome to beautify JSON output: [JSON Formatter][5].
+
 What we did here:
 
 * fetched affiliate by token from route (in our case token is `sensio_labs`)
-* used `view` method to create `View` object with empty array response and code 200.
-* used `handleView` method to convert `View` object into response object. 
+* used `view` method to create `View` object with all jobs and 200 response code inside
+* used `handleView` method to convert `View` object into response object
 
 What is not done yet:
 
 * check if affiliate is active
-* fetch, serialize and return jobs related to proper affiliate
+* return only jobs related to affiliate
+* modify job serialization process
+
+### Serialization
+
+If you look closely to the result, you will see that everything from the database is returned, including jobs and affiliates from the category of a job and that’s too much.
+To limit the returned data we will use some methods from the **JMSSerializerBundle** we installed earlier.
+
+Open the `src/Entity/Job.php` entity file and add the following annotations and new methods:
+
+```php
+// ...
+use JMS\Serializer\Annotation as JMS;
+
+/**
+ * ...
+ *
+ * @JMS\ExclusionPolicy("all")
+ */
+class Job
+{
+    // ...
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("int")
+     */
+    private $id;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $type;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $company;
+
+    /**
+     * ...
+     */
+    private $logo;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $url;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $position;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $location;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $description;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("string")
+     */
+    private $howToApply;
+
+    /**
+     * ...
+     */
+    private $token;
+
+    /**
+     * ...
+     */
+    private $public;
+
+    /**
+     * ...
+     */
+    private $activated;
+
+    /**
+     * ...
+     */
+    private $email;
+
+    /**
+     * ...
+     *
+     * @JMS\Expose()
+     * @JMS\Type("DateTime")
+     */
+    private $expiresAt;
+
+    /**
+     * ...
+     */
+    private $createdAt;
+
+    /**
+     * ...
+     */
+    private $updatedAt;
+
+    /**
+     * ...
+     */
+    private $category;
+
+    // ...
+
+    /**
+     * @JMS\VirtualProperty
+     * @JMS\SerializedName("logo_path")
+     *
+     * @return string|null
+     */
+    public function getLogoPath()
+    {
+        return $this->getLogo() ? 'uploads/jobs/' . $this->getLogo() : null;
+    }
+
+    /**
+     * @JMS\VirtualProperty
+     * @JMS\SerializedName("category_name")
+     *
+     * @return string
+     */
+    public function getCategoryName()
+    {
+        return $this->getCategory()->getName();
+    }
+}
+```
+
+*Work in progress*
 
 ## The Affiliate Application Form
 
@@ -262,3 +434,4 @@ Main page is available here: [Symfony 4.1 Jobeet Tutorial](../index.md)
 [2]: https://symfony.com/doc/1.5/bundles/FOSRestBundle/index.html
 [3]: https://github.com/schmittjoh/JMSSerializerBundle
 [4]: http://127.0.0.1/api/v1/sensio_labs/jobs
+[5]: https://chrome.google.com/webstore/detail/json-formatter/bcjindcccaagfpapjjmafapmmgkkhgoa
